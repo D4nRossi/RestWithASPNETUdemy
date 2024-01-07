@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using PersonController.Model;
+using PersonController.Services.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,42 +14,41 @@ namespace CalculadoraRest.Controllers {
 
     public class PersonController : ControllerBase {
         private readonly ILogger<PersonController> _logger;
+        private readonly IPersonService _personService;
 
-        public PersonController(ILogger<PersonController> logger) {
+        public PersonController(ILogger<PersonController> logger, IPersonService personService) {
             _logger = logger;
+            _personService = personService;
         }
 
-        [HttpGet("sum/{firstNumber}/{secondNumber}")]
-        public IActionResult GetSum(string firstNumber, string secondNumber) {
-
-            if (IsNumeric(firstNumber) && IsNumeric(secondNumber)) {
-                var sum = ConvertToDecimal(firstNumber) + ConvertToDecimal(secondNumber);
-                return Ok(sum.ToString());
-            }
-
-            return BadRequest("Invalid Input");
+        [HttpGet]
+        public IActionResult FindAll() {
+            return Ok(_personService.FindAll());
         }
 
-        private double ConvertToDouble(string strNumber) {
-            double doubleValue;
-            if (double.TryParse(strNumber, out doubleValue)) {
-                return doubleValue;
-            }
-            return 0;
+        [HttpGet]
+        public IActionResult FindById(long id) {
+            var person = _personService.FindById(id);
+            if(person == null) return NotFound();
+            return Ok(person);
         }
 
-        private decimal ConvertToDecimal(string strNumber) {
-            decimal decimalValue;
-            if (decimal.TryParse(strNumber, out decimalValue)) {
-                return decimalValue;
-            }
-            return 0;
+        [HttpPost]
+        public IActionResult Create([FromBody] Person person) {
+            if (person == null) return BadRequest();
+            return Ok(_personService.Create(person));
         }
 
-        private bool IsNumeric(string strNumber) {
-            double number;
-            bool isNumber = double.TryParse(strNumber, System.Globalization.NumberStyles.Any, System.Globalization.NumberFormatInfo.InvariantInfo, out number);
-            return isNumber;
+        [HttpPut]
+        public IActionResult Update([FromBody] Person person) {
+            if (person == null) return BadRequest();
+            return Ok(_personService.Update(person));
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(long id) {
+            _personService.Delete(id);
+            return NoContent();
         }
     }
 }
